@@ -125,12 +125,17 @@ func GetAll[T any](db *gorm.DB, process func(*gorm.DB, *gin.Context) *gorm.DB) f
 }
 func Update[T any](db *gorm.DB) func(c *gin.Context) {
 	return func(c *gin.Context) {
-		var d T
-		if err := db.Save(&d).Error; err != nil {
+		d := new(T)
+		if err := c.ShouldBindJSON(d); err != nil {
 			c.AbortWithStatus(404)
-			log.Println(err)
+			log.Println("[gorm]parse update data failed: ", err)
 		} else {
-			c.JSON(200, d)
+			if err := db.Save(&d).Error; err != nil {
+				c.AbortWithStatus(404)
+				log.Println(err)
+			} else {
+				c.JSON(200, d)
+			}
 		}
 	}
 }
