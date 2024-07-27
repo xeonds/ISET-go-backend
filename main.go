@@ -47,6 +47,7 @@ func main() {
 	})
 
 	r := gin.Default()
+	r.Use(lib.CorsMiddleware())
 	lib.APIBuilder(func(rg *gin.RouterGroup) *gin.RouterGroup {
 		rg.GET("", lib.GetAll[Graph](db, nil))
 		rg.GET("/by_graph/:gid", lib.GetAll[Graph](db, func(d *gorm.DB, ctx *gin.Context) *gorm.DB {
@@ -102,9 +103,16 @@ func main() {
 		rg.DELETE("/:id", lib.Delete[Graph](db))
 		return rg
 	})(r, "/graph")
-	lib.AddCRUDNew[Node](r, "/node", db, nil, func(d *gorm.DB, ctx *gin.Context) *gorm.DB {
-		return d.Where("graph_id = ?", ctx.Param("gid"))
-	}, nil)
+	lib.APIBuilder(func(rg *gin.RouterGroup) *gin.RouterGroup {
+		rg.GET("", lib.GetAll[Node](db, nil))
+		rg.GET("/by_graph/:gid", lib.GetAll[Node](db, func(d *gorm.DB, ctx *gin.Context) *gorm.DB {
+			return d.Where("graph_id = ?", ctx.Param("gid"))
+		}))
+		rg.POST("", lib.Create[Node](db, nil))
+		rg.PUT("/:id", lib.Update[Node](db))
+		rg.DELETE("/:id", lib.Delete[Node](db))
+		return rg
+	})(r, "/node")
 	lib.APIBuilder(func(rg *gin.RouterGroup) *gin.RouterGroup {
 		rg.GET("", lib.GetAll[Link](db, nil))
 		rg.GET("/by_graph/:gid", lib.GetAll[Link](db, func(d *gorm.DB, ctx *gin.Context) *gorm.DB {
