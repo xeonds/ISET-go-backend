@@ -18,6 +18,13 @@ type Graph struct {
 	Name string `json:"name"`
 }
 
+type GraphLink struct {
+	Id       uint32 `gorm:"primary_key" json:"id"`
+	GraphId1 uint32 `json:"graph_id_1"`
+	GraphId2 uint32 `json:"graph_id_2"`
+	Type     string `json:"type"`
+}
+
 type Node struct {
 	Id      uint32 `gorm:"primary_key" json:"id"`
 	GraphId uint32 `json:"graph_id"`
@@ -43,7 +50,7 @@ type DuplicateNode struct {
 func main() {
 	config := lib.LoadConfig[Config]()
 	db := lib.NewDB(&config.DatabaseConfig, func(db *gorm.DB) error {
-		return db.AutoMigrate(&Graph{}, &Node{}, &Link{}, &DuplicateNode{})
+		return db.AutoMigrate(&Graph{}, &Node{}, &Link{}, &DuplicateNode{}, &GraphLink{})
 	})
 
 	r := gin.Default()
@@ -103,6 +110,16 @@ func main() {
 		rg.DELETE("/:id", lib.Delete[Graph](db))
 		return rg
 	})(r, "/graph")
+	lib.APIBuilder(func(rg *gin.RouterGroup) *gin.RouterGroup {
+		rg.GET("", lib.GetAll[GraphLink](db, nil))
+		rg.GET("/by_graph/:gid", lib.GetAll[GraphLink](db, func(d *gorm.DB, ctx *gin.Context) *gorm.DB {
+			return d.Where("graph_id_1 = ? OR graph_id_2 = ?", ctx.Param("gid"), ctx.Param("gid"))
+		}))
+		rg.POST("", lib.Create[GraphLink](db, nil))
+		rg.PUT("/:id", lib.Update[GraphLink](db))
+		rg.DELETE("/:id", lib.Delete[GraphLink](db))
+		return rg
+	})(r, "/graph_link")
 	lib.APIBuilder(func(rg *gin.RouterGroup) *gin.RouterGroup {
 		rg.GET("", lib.GetAll[Node](db, nil))
 		rg.GET("/by_graph/:gid", lib.GetAll[Node](db, func(d *gorm.DB, ctx *gin.Context) *gorm.DB {
