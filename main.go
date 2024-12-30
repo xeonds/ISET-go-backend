@@ -14,8 +14,10 @@ type Config struct {
 }
 
 type Graph struct {
-	Id   uint32 `gorm:"primary_key" json:"id"`
-	Name string `json:"name"`
+	Id          uint32 `gorm:"primary_key" json:"id"`
+	Name        string `json:"name"`
+	IsDirectory bool   `json:"is_directory"`
+	ParentId    uint32 `json:"parent_id"`
 }
 
 type GraphLink struct {
